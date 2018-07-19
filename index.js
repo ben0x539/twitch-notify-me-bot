@@ -5,7 +5,7 @@ const winston = require('winston')
 const _ = require('lodash')
 const {
   EVENT_NAME, IFTTT_KEY,
-  TWITCH_CODE, TWITCH_NAME, TWITCH_CHANNELS,
+  TWITCH_CODE, TWITCH_NAME, TWITCH_CHANNELS, TWITCH_IGNORE,
   MONITORED_CHANNELS, MONITORED_TERMS,
   LOG_LEVEL,
 } = process.env
@@ -28,11 +28,11 @@ const fallback = TWITCH_NAME ? [TWITCH_NAME] : []
 const monitoredTerms = splitBySpaces(MONITORED_TERMS) || fallback // or any additional terms you care about
 const otherChannels = splitBySpaces(TWITCH_CHANNELS) || fallback // array of string channel names to join on connect (each WITHOUT a # eg ninja)
 const channels = _.union(monitoredChannels.map(s => s.substr(1)), otherChannels)
-const twitchName = TWITCH_NAME || 'justinfan0'
+const ignoredUsers = splitBySpaces(TWITCH_IGNORE) || fallback
 
 const opts = {
   identity: {
-    username: twitchName,
+    username: TWITCH_NAME || 'justinfan0',
     password: TWITCH_CODE
   },
   channels: channels,
@@ -53,6 +53,7 @@ logger.info("starting up", {
   channels: channels,
   monitoredChannels: monitoredChannels,
   monitoredTerms: monitoredTerms,
+  ignoredUsers: ignoredUsers,
 })
 
 if (channels.length == 0) {
@@ -76,7 +77,14 @@ if (!EVENT_NAME || !IFTTT_KEY) {
 }
 
 function onChatHandler (channel, userstate = {}, message, self) {
-  if (userstate.username === twitchName) return
+  if (ignoredUsers.includes(userstate.username)) {
+    logger.debug("dropping chat message from ignored user", {
+      channel: channel,
+      sender: userstate.username,
+      text: message,
+    })
+    return
+  }
 
   logger.debug("received chat message", {
     channel: channel,
