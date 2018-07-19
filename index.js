@@ -9,13 +9,28 @@ const {
   LOG_LEVEL,
 } = process.env
 
+function splitBySpaces (s) {
+  if (s === undefined) {
+    return undefined
+  }
+
+  if (s === "") {
+    return []
+  }
+
+  return s.split(/\s+/)
+}
+
 let Bot
-const monitoredChannels = MONITORED_CHANNELS ? MONITORED_CHANNELS.split(/\s+/) : [] // array of string channel names (each needs to start with a # eg #ninja)
-const monitoredTerms = MONITORED_TERMS ? MONITORED_TERMS.split(/\s+/) : [] // or any additional terms you care about
-const channels = TWITCH_CHANNELS.split(/\s+/) // array of string channel names to join on connect (each WITHOUT a # eg ninja)
+const monitoredChannels = splitBySpaces(MONITORED_CHANNELS) || [] // array of string channel names (each needs to start with a # eg #ninja)
+const fallback = TWITCH_NAME ? [TWITCH_NAME] : []
+const monitoredTerms = splitBySpaces(MONITORED_TERMS) || fallback // or any additional terms you care about
+const channels = splitBySpaces(TWITCH_CHANNELS) || fallback // array of string channel names to join on connect (each WITHOUT a # eg ninja)
+const twitchName = TWITCH_NAME || 'justinfan0'
+
 const opts = {
   identity: {
-    username: TWITCH_NAME,
+    username: twitchName,
     password: TWITCH_CODE
   },
   channels: channels,
@@ -39,7 +54,7 @@ logger.info("starting up", {
 })
 
 function onChatHandler (channel, userstate = {}, message, self) {
-  if (userstate.username === TWITCH_NAME) return
+  if (userstate.username === twitchName) return
 
   logger.debug("received chat message", {
     channel: channel,
