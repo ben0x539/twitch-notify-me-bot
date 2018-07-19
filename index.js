@@ -1,7 +1,8 @@
 require('dotenv').config()
 const request = require('request-promise')
 const TwitchJS = require('twitch-js')
-const { EVENT_NAME, IFTTT_KEY, TWITCH_CODE, TWITCH_NAME } = process.env
+const winston = require('winston')
+const { EVENT_NAME, IFTTT_KEY, TWITCH_CODE, TWITCH_NAME, LOG_LEVEL } = process.env
 
 let Bot
 const monitoredChannels = [] // array of string channel names (each needs to start with a # eg #ninja)
@@ -16,10 +17,36 @@ const opts = {
   maxReconnectAttempts: 5
 }
 
+const logger = winston.createLogger({
+  level: LOG_LEVEL || 'info',
+  format:  winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  transports: [ new winston.transports.Console() ]
+})
+
+logger.info("starting up", {
+  channels: opts.channels,
+  monitoredChannels: monitoredChannels,
+  monitoredTerms: monitoredTerms,
+})
+
 function onChatHandler (channel, userstate = {}, message, self) {
   if (userstate.username === TWITCH_NAME) return
 
+  logger.debug("received chat message", {
+    channel: channel,
+    sender: userstate.username,
+    text: message,
+  })
+
   if (isInMonitoredChannel(channel) || includesMonitoredTerm(message)) {
+    logger.info("sending notification for chat message", {
+      channel: channel,
+      sender: userstate.username,
+      text: message,
+    })
     const totalMessage = `${channel}:\t${userstate.username}: ${message}\n`
     return sendMessage(totalMessage)
   }
@@ -36,11 +63,11 @@ function runBot () {
 }
 
 function onConnectedHandler (addr, port) {
-  console.info(`Connected to Twitch ${addr}:${port}`)
+  logger.info("connected to twitch", { endpoint: `${addr}:${port}` })
 }
 
 function onDisconnectedHandler (reason) {
-  console.info(`Disconnected. Reason: ${reason}`)
+  logger.info("disconnected", { reason: reason })
   process.exit(1)
 }
 
@@ -53,18 +80,28 @@ function sendMessage (message) {
       method: 'POST'
     })
   } catch (e) {
-    console.error(e)
+    logger.error("couldn't send ifttt message", { err: e })
   }
 }
 
 module.exports = runBot()
 
 function isInMonitoredChannel (channel) {
-  return monitoredChannels.includes(channel)
+  const result = monitoredChannels.includes(channel)
+  logger.debug("checking if channel is monitored", {
+    channel: channel,
+    monitored: result,
+  })
+  return result
 }
 
 function includesMonitoredTerm (message) {
   return monitoredTerms.some(function (term) {
-    return message.includes(term)
+    const result = message.includes(term)
+    logger.debug("checking if monitored term matches", {
+      term: term,
+      matches: result,
+    })
+    return result
   })
 }
