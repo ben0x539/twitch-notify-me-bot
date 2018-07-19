@@ -72,16 +72,14 @@ function onDisconnectedHandler (reason) {
 }
 
 function sendMessage (message) {
-  try {
-    const url = `https://maker.ifttt.com/trigger/${EVENT_NAME}/with/key/${IFTTT_KEY}`
-    return request(url, {
-      body: { value1: message },
-      json: true,
-      method: 'POST'
-    })
-  } catch (e) {
+  const url = `https://maker.ifttt.com/trigger/${EVENT_NAME}/with/key/${IFTTT_KEY}`
+  return request(url, {
+    body: { value1: message },
+    json: true,
+    method: 'POST'
+  }).catch(e => {
     logger.error("couldn't send ifttt message", { err: e })
-  }
+  })
 }
 
 module.exports = runBot()
