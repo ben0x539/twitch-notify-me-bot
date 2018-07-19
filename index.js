@@ -2,17 +2,23 @@ require('dotenv').config()
 const request = require('request-promise')
 const TwitchJS = require('twitch-js')
 const winston = require('winston')
-const { EVENT_NAME, IFTTT_KEY, TWITCH_CODE, TWITCH_NAME, LOG_LEVEL } = process.env
+const {
+  EVENT_NAME, IFTTT_KEY,
+  TWITCH_CODE, TWITCH_NAME, TWITCH_CHANNELS,
+  MONITORED_CHANNELS, MONITORED_TERMS,
+  LOG_LEVEL,
+} = process.env
 
 let Bot
-const monitoredChannels = [] // array of string channel names (each needs to start with a # eg #ninja)
-const monitoredTerms = [TWITCH_NAME] // or any additional terms you care about
+const monitoredChannels = MONITORED_CHANNELS ? MONITORED_CHANNELS.split(/\s+/) : [] // array of string channel names (each needs to start with a # eg #ninja)
+const monitoredTerms = MONITORED_TERMS ? MONITORED_TERMS.split(/\s+/) : [] // or any additional terms you care about
+const channels = TWITCH_CHANNELS.split(/\s+/) // array of string channel names to join on connect (each WITHOUT a # eg ninja)
 const opts = {
   identity: {
     username: TWITCH_NAME,
     password: TWITCH_CODE
   },
-  channels: [ ], // array of string channel names to join on connect (each WITHOUT a # eg ninja)
+  channels: channels,
   reconnect: true,
   maxReconnectAttempts: 5
 }
@@ -27,7 +33,7 @@ const logger = winston.createLogger({
 })
 
 logger.info("starting up", {
-  channels: opts.channels,
+  channels: channels,
   monitoredChannels: monitoredChannels,
   monitoredTerms: monitoredTerms,
 })
