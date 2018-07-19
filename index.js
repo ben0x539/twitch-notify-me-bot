@@ -53,6 +53,26 @@ logger.info("starting up", {
   monitoredTerms: monitoredTerms,
 })
 
+if (channels.length == 0) {
+  logger.error("channel list missing (set TWITCH_CHANNELS env var)")
+  process.exit(1)
+}
+
+if (monitoredChannels.length == 0 && monitoredTerms.length == 0) {
+  logger.error("not monitoring anything (set MONITORED_CHANNELS or MONITORED_TERMS env vars)")
+  process.exit(1)
+}
+
+if (TWITCH_NAME && !/^justinfan\d+/.test(TWITCH_NAME) && !TWITCH_CODE) {
+  logger.error("twitch auth code missing (set TWITCH_CODE env var)")
+  process.exit(1)
+}
+
+if (!EVENT_NAME || !IFTTT_KEY) {
+  logger.error("ifttt config missing (set EVENT_NAME and IFTTT_KEY env vars)")
+  process.exit(1)
+}
+
 function onChatHandler (channel, userstate = {}, message, self) {
   if (userstate.username === twitchName) return
 
