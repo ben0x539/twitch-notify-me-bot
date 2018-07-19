@@ -53,8 +53,7 @@ function onChatHandler (channel, userstate = {}, message, self) {
       sender: userstate.username,
       text: message,
     })
-    const totalMessage = `${channel}:\t${userstate.username}: ${message}\n`
-    return sendMessage(totalMessage)
+    return sendMessage(message, userstate.username, channel)
   }
 }
 
@@ -77,10 +76,14 @@ function onDisconnectedHandler (reason) {
   process.exit(1)
 }
 
-function sendMessage (message) {
+function sendMessage (message, sender, channel) {
   const url = `https://maker.ifttt.com/trigger/${EVENT_NAME}/with/key/${IFTTT_KEY}`
   return request(url, {
-    body: { value1: message },
+    body: {
+      value1: message,
+      value2: sender,
+      value3: channel,
+    },
     json: true,
     method: 'POST'
   }).catch(e => {
