@@ -9,6 +9,7 @@
     "request": "~2.87.0",
     "request-promise": "~4.2.2",
     "twitch-js": "~1.2.12",
-    "winston": "~3.0.0"
+    "winston": "~3.0.0",
+    "lodash": "~4.17.10"
   }
 }

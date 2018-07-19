@@ -2,6 +2,7 @@ require('dotenv').config()
 const request = require('request-promise')
 const TwitchJS = require('twitch-js')
 const winston = require('winston')
+const _ = require('lodash')
 const {
   EVENT_NAME, IFTTT_KEY,
   TWITCH_CODE, TWITCH_NAME, TWITCH_CHANNELS,
@@ -25,7 +26,8 @@ let Bot
 const monitoredChannels = splitBySpaces(MONITORED_CHANNELS) || [] // array of string channel names (each needs to start with a # eg #ninja)
 const fallback = TWITCH_NAME ? [TWITCH_NAME] : []
 const monitoredTerms = splitBySpaces(MONITORED_TERMS) || fallback // or any additional terms you care about
-const channels = splitBySpaces(TWITCH_CHANNELS) || fallback // array of string channel names to join on connect (each WITHOUT a # eg ninja)
+const otherChannels = splitBySpaces(TWITCH_CHANNELS) || fallback // array of string channel names to join on connect (each WITHOUT a # eg ninja)
+const channels = _.union(monitoredChannels.map(s => s.substr(1)), otherChannels)
 const twitchName = TWITCH_NAME || 'justinfan0'
 
 const opts = {
