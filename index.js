@@ -26,9 +26,9 @@ let Bot
 const monitoredChannels = splitBySpaces(MONITORED_CHANNELS) || [] // array of string channel names (each needs to start with a # eg #ninja)
 const fallback = TWITCH_NAME ? [TWITCH_NAME] : []
 const monitoredTerms = splitBySpaces(MONITORED_TERMS) || fallback // or any additional terms you care about
-const otherChannels = splitBySpaces(TWITCH_CHANNELS) || fallback // array of string channel names to join on connect (each WITHOUT a # eg ninja)
+const otherChannels = splitBySpaces(TWITCH_CHANNELS) || fallback // array of string channel names to join on connect (each without a # eg ninja)
 const channels = _.union(monitoredChannels.map(s => s.substr(1)), otherChannels)
-const ignoredUsers = splitBySpaces(TWITCH_IGNORE) || fallback
+const ignoredUsers = splitBySpaces(TWITCH_IGNORE) || fallback.concat("nightbot")
 
 const opts = {
   identity: {
@@ -77,10 +77,11 @@ if (!EVENT_NAME || !IFTTT_KEY) {
 }
 
 function onChatHandler (channel, userstate = {}, message, self) {
-  if (ignoredUsers.includes(userstate.username)) {
+  const user = userstate.username
+  if (ignoredUsers.includes(user)) {
     logger.debug("dropping chat message from ignored user", {
       channel: channel,
-      sender: userstate.username,
+      sender: user,
       text: message,
     })
     return
@@ -88,17 +89,17 @@ function onChatHandler (channel, userstate = {}, message, self) {
 
   logger.debug("received chat message", {
     channel: channel,
-    sender: userstate.username,
+    sender: user,
     text: message,
   })
 
   if (isInMonitoredChannel(channel) || includesMonitoredTerm(message)) {
     logger.info("sending notification for chat message", {
       channel: channel,
-      sender: userstate.username,
+      sender: user,
       text: message,
     })
-    return sendMessage(message, userstate.username, channel)
+    return sendMessage(message, user, channel)
   }
 }
 
@@ -149,7 +150,7 @@ function isInMonitoredChannel (channel) {
 
 function includesMonitoredTerm (message) {
   return monitoredTerms.some(function (term) {
-    const result = message.includes(term)
+    const result = message.match(term)
     logger.debug("checking if monitored term matches", {
       term: term,
       matches: result,
