@@ -6,7 +6,7 @@ const _ = require('lodash')
 const {
   EVENT_NAME, IFTTT_KEY,
   TWITCH_CODE, TWITCH_NAME, TWITCH_CHANNELS, TWITCH_IGNORE,
-  MONITORED_CHANNELS, MONITORED_TERMS,
+  MONITORED_CHANNELS, MONITORED_TERMS, MONITORED_NAMES,
   LOG_LEVEL,
 } = process.env
 
@@ -23,6 +23,7 @@ function splitBySpaces (s) {
 }
 
 let Bot
+const monitoredNames = splitBySpaces(MONITORED_NAMES) || []
 const monitoredChannels = splitBySpaces(MONITORED_CHANNELS) || [] // array of string channel names (each needs to start with a # eg #ninja)
 const fallback = TWITCH_NAME ? [TWITCH_NAME] : []
 const monitoredTerms = splitBySpaces(MONITORED_TERMS) || fallback // or any additional terms you care about
@@ -53,6 +54,7 @@ logger.info("starting up", {
   channels: channels,
   monitoredChannels: monitoredChannels,
   monitoredTerms: monitoredTerms,
+  monitoredNames: monitoredNames,
   ignoredUsers: ignoredUsers,
 })
 
@@ -61,8 +63,8 @@ if (channels.length == 0) {
   process.exit(1)
 }
 
-if (monitoredChannels.length == 0 && monitoredTerms.length == 0) {
-  logger.error("not monitoring anything (set MONITORED_CHANNELS or MONITORED_TERMS env vars)")
+if (monitoredChannels.length == 0 && monitoredTerms.length == 0 && monitoredNames.length == 0) {
+  logger.error("not monitoring anything (set MONITORED_CHANNELS, MONITORED_TERMS or MONITORED_NAMES env vars)")
   process.exit(1)
 }
 
@@ -93,7 +95,7 @@ function onChatHandler (channel, userstate = {}, message, self) {
     text: message,
   })
 
-  if (isInMonitoredChannel(channel) || includesMonitoredTerm(message)) {
+  if (isInMonitoredChannel(channel) || includesMonitoredTerm(message) || isMonitoredName(user)) {
     logger.info("sending notification for chat message", {
       channel: channel,
       sender: user,
@@ -157,4 +159,13 @@ function includesMonitoredTerm (message) {
     })
     return result
   })
+}
+
+function isMonitoredName (user) {
+  const result = monitoredNames.includes(user)
+  logger.debug("checking if user name is monitored", {
+    user: user,
+    monitored: result,
+  })
+  return result
 }
